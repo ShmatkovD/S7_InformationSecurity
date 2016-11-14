@@ -6,17 +6,17 @@ from random import randint
 # RSA
 
 
-def get_gcd(a, b):
+def _get_gcd(a, b):
     if a == 0:
         return b, 0, 1
-    d, x1, y1 = get_gcd(b % a, a)
+    d, x1, y1 = _get_gcd(b % a, a)
     x = y1 - (b / a) * x1
     y = x1
 
     return d, x, y
 
 
-def is_prime(n):
+def _is_prime(n):
     """Check if n is prime
     :param n: number > 2
     :type n: int
@@ -60,7 +60,7 @@ def is_prime(n):
     return True
 
 
-def generate_prime(length):
+def _generate_prime(length):
     """Return prime number with size length
     :type length:
     :rtype:
@@ -72,24 +72,24 @@ def generate_prime(length):
 
         result = result | (2 ** (length - 1)) | 1
 
-        if is_prime(result):
+        if _is_prime(result):
             return result
 
 
-def get_prime_numbers(length):
-    """Return 2 prime numbers with size length
+def _get_prime_numbers(length):
+    """Return l2 prime numbers with size length
     :type length: int
     :rtype: tuple
     """
-    a = generate_prime(length)
+    a = _generate_prime(length)
     b = 0
     while a == b or b == 0:
-        b = generate_prime(length)
+        b = _generate_prime(length)
 
     return a, b
 
 
-def get_exponent(eu):
+def _get_exponent(eu):
     """Return relatively prime to eu which less than eu
     :type eu: int
     :rtype: int
@@ -99,28 +99,28 @@ def get_exponent(eu):
     max_size = len(bin(eu)[2:])
     it = 0
 
-    while (not is_prime(exp) or exp > eu) and it < max_iteration:
+    while (not _is_prime(exp) or exp > eu) and it < max_iteration:
         size = randint(1, max_size)
         exp = 2 ** size + 1
         it += 1
 
     if not it < max_iteration:
-        exp = generate_prime(max_size - 1)
+        exp = _generate_prime(max_size - 1)
 
     return exp
 
 
 def generate_keys(key_length):
 
-    p, q = get_prime_numbers(key_length)
+    p, q = _get_prime_numbers(key_length)
 
     n = p * q
     eu = (p - 1) * (q - 1)
 
     gcd = 2
     while gcd != 1:
-        e = get_exponent(eu)
-        gcd, d, t = get_gcd(e, eu)
+        e = _get_exponent(eu)
+        gcd, d, t = _get_gcd(e, eu)
 
     if d < 0:
         d += eu
@@ -130,12 +130,12 @@ def generate_keys(key_length):
     return (e, n), (d, n)
 
 
-def encrypt(input, e, n):
+def _encrypt(input, e, n):
     """Encrypt list of numbers with key and module
     :type input: list
     :type e: int
     :type n: int
-    :rtype: str
+    :rtype: list
     """
     input = [item % n for item in input]
     output = []
@@ -148,6 +148,46 @@ def encrypt(input, e, n):
     return output
 
 
+def encrypt_sequence(input, key):
+    """Encrypt list of numbers with key. Key consist of 2 parts: key and module
+    :type input: list
+    :type key: tuple
+    :rtype: list
+    """
+    result = _encrypt(input, key[0], key[1])
+    return result
+
+
+def decrypt_sequence(input, key):
+    """Decrypt list of numbers with key. Key consists of 2 parts: key, module
+    :type input: list
+    :type key: tuple
+    :rtype: list
+    """
+    result = _encrypt(input, key[0], key[1])
+    return result
+
+
+def encrypt(input, key):
+    """Encrypt list of numbers with key. Key consist of 2 parts: key and module
+    :type input: int
+    :type key: tuple
+    :rtype: list
+    """
+    result = _encrypt([input], key[0], key[1])
+    return result[0]
+
+
+def decrypt(input, key):
+    """Decrypt list of numbers with key. Key consists of 2 parts: key, module
+    :type input: int
+    :type key: tuple
+    :rtype: list
+    """
+    result = _encrypt([input], key[0], key[1])
+    return result[0]
+
+
 if __name__ == '__main__':
     key_length = 20
 
@@ -156,14 +196,14 @@ if __name__ == '__main__':
 
     public_key, private_key = generate_keys(key_length)
 
-    encrypted = encrypt(items, public_key[0], public_key[1])
+    encrypted = _encrypt(items, public_key[0], public_key[1])
 
     with open('encrypted.txt', 'w') as f:
         f.write(
             ' '.join(str(item) for item in encrypted)
         )
 
-    decrypted = encrypt(encrypted, private_key[0], private_key[1])
+    decrypted = _encrypt(encrypted, private_key[0], private_key[1])
 
     with open('decrypted.txt', 'w') as f:
         f.write(
